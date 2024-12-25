@@ -11,7 +11,7 @@ class AuthService:
     def check_user(self, user_data):
         AuthID = self.dao.check_user(user_data)
         if AuthID:
-            tokens = self.generate_jwt(user_data)
+            tokens = self.generate_jwt(AuthID)
             self.dao.change_tokens(AuthID, tokens)
             return (tokens)
         else:
@@ -26,15 +26,15 @@ class AuthService:
         else:
             abort(401)
 
-    def check_access(self, access_key):
-        try:
-            access_key = access_key.get("access_token")
-        except:
-            return False
-        Authorized = self.dao.check_access(access_key)
-        if Authorized:
-            return True
-        return False
+    # def check_access(self, access_key):
+    #     try:
+    #         access_key = access_key.get("access_token")
+    #     except:
+    #         return False
+    #     Authorized = self.dao.check_access(access_key)
+    #     if Authorized:
+    #         return True
+    #     return False
 
     def check_admin(self, access_key):
         return self.dao.check_admin(access_key)

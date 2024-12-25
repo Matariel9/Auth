@@ -1,28 +1,35 @@
 from implemented import auth_service
 from flask import request, abort
+import jwt
+
+from constants import secret, algo
 
 def auth_required(func):
     def wrapper(*args, **kwargs):
-        access_token = request.get_json()
-        result = func(*args, **kwargs)
-        Authorized = auth_service.check_access(access_token)
-        if not Authorized:
+        if 'Authorization' not in request.headers:
             abort(401)
-        else:
-            return result
+        
+        data = request.headers['Authorization']
+        token = data.split("Bearer ")[-1]
+        try:
+            jwt.decode(token, secret, algorithms=algo)
+        except Exception:
+            abort(401)
+        return func(*args, **kwargs)
     return wrapper
 
 def admin_required(func):
     def wrapper(*args, **kwargs):
-        access_token = request.get_json()   
-        Authorized = auth_service.check_access(access_token)
-        admin = auth_service.check_admin(access_token)
-        print(Authorized)
-        print(admin)
-        if not admin:
+        if 'Authorization' not in request.headers:
             abort(401)
-        elif not Authorized:
+        
+        data = request.headers['Authorization']
+        token = data.split("Bearer ")[-1]
+        try:
+            decoded = jwt.decode(token, secret, algorithms=algo)
+            if decoded.get("role") != "admin":
+                abort(401)
+        except Exception:
             abort(401)
-        result = func(*args, **kwargs)
-        return result
+        return func(*args, **kwargs)
     return wrapper

@@ -9,16 +9,20 @@ class AuthDao:
         self.session = session
 
     def check_user(self, user_data):
+        print(user_data.get('username'))
         try:
-            user = self.session.query(User).filter(User.username == user_data.get('username')).one()
-            if user == []:
+            users = self.session.query(User).filter(User.username == user_data.get('username')).all()
+            if users == []:
                 return False
         except:
             return False
         passw = user_data.get('password')
+        
         # passw = self.get_hash(user_data.get('password'))
-        if passw == user.password:
-            return user
+        for user in users:
+            if passw == user.password:
+                print(user.role)
+                return user
         return False
         # return hmac.compare_digest(passw, user[0].password)
         
@@ -37,6 +41,7 @@ class AuthDao:
 
     def check_access(self, access_key):
         try:
+            print(access_key)
             users_auth = self.session.query(Auth).filter(Auth.access_token == access_key).one()
             if(users_auth):
                 return True
@@ -57,12 +62,7 @@ class AuthDao:
             return False
 
     def change_tokens(self, __user__, tokens):
-        user_auth = self.session.query(Auth).filter(Auth.userid == __user__.id).one()
-        user_auth.refresh_token = tokens['refresh_token']
-        user_auth.access_token = tokens['access_token']
-        self.session.add(user_auth)
-        self.session.commit()
-        self.session.close()
+        return tokens
 
     def get_hash(self, password):
             return hashlib.pbkdf2_hmac(
