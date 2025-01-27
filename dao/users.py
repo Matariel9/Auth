@@ -1,7 +1,7 @@
 from dao.model.user import User, UserSchema
-from dao.model.auth import Auth
 import datetime, calendar, jwt
 from constants import secret, algo
+import json
 
 
 class UserDao:
@@ -11,20 +11,38 @@ class UserDao:
     def get_users(self):
         all_users = self.session.query(User).all()
         users_schema = UserSchema(many = True)
-        return users_schema.dumps(all_users)
+        return users_schema.dump(all_users)
 
     def add_user(self, data):
         user_info = User(**data)
 
-        
         user_hash = self.generate_jwt(data)
-        user_hash = Auth(**user_hash)
 
         self.session.add(user_hash)
         self.session.add(user_info)
         self.session.commit()
         self.session.close()
         return True
+
+    def get_user(self, bid):
+        user = self.session.query(User).filter(User.id == bid)
+        return UserSchema().dump(*user.all())
+
+    def change_user(self, bid, data):
+        user = self.session.query(User).filter(User.id == bid).one()
+        user.username = data.get("username")
+        user.password = data.get("password")
+        user.role = data.get("role")
+        
+        self.session.add(user)
+        self.session.commit()
+        return UserSchema().dump(user)
+
+    def delete_user(self, bid):
+        user = self.session.query(User).filter(User.id == bid)
+        self.session.delete(user)
+        self.session.commit()
+        return 203
 
     def generate_jwt(self, user_data):
         try:

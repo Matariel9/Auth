@@ -1,5 +1,7 @@
 from dao.model.user import User
-from dao.model.auth import Auth
+from flask import abort
+import jwt
+from constants import secret, algo
 import hmac
 import hashlib
 from constants import PWD_HASH_SALT, PWD_HASH_ITERATIONS
@@ -25,44 +27,25 @@ class AuthDao:
                 return user
         return False
         # return hmac.compare_digest(passw, user[0].password)
-        
-
     
-    def check_key(self, data): 
-        try:
-            user_auth = self.session.query(Auth).filter(Auth.refresh_token == data.get('refresh_key')).one()
-            if not user_auth:
-                print("11")
-                return False
-        except:
-            return False
+    def check_key(self, refresh_key): 
+        # try:
+        #     user_auth = self.session.query(Auth).filter(Auth.refresh_token == data.get('refresh_key')).one()
+        #     if not user_auth:
+        #         print("11")
+        #         return False
+        # except:
+        #     return False
         
-        return self.session.query(User).filter(User.id == user_auth.userid).one()
-
-    def check_access(self, access_key):
+        
         try:
-            print(access_key)
-            users_auth = self.session.query(Auth).filter(Auth.access_token == access_key).one()
-            if(users_auth):
-                return True
-            else:
-                return False
-        except:
-            return False
-
-    def check_admin(self, access_key):
-        try:
-            users_auth = self.session.query(Auth).filter(Auth.access_token == access_key['access_token']).one()
-            user = self.session.query(User).filter(users_auth.userid == User.id).one()
-            if(user.role == 'admin'):
-                return True
-            else:
-                return False
-        except:
-            return False
-
-    def change_tokens(self, __user__, tokens):
-        return tokens
+            token = refresh_key['refresh_token'].split("Bearer ")[-1]
+            decoded = jwt.decode(token, secret, algorithms=algo)
+        except Exception:
+            abort(401)
+        
+        print(decoded)
+        return decoded
 
     def get_hash(self, password):
             return hashlib.pbkdf2_hmac(
